@@ -10,6 +10,7 @@ import (
 type ArgumentParser struct {
 	flagSet  *flag.FlagSet
 	commands map[string]*Command
+	results  map[string]string
 }
 
 type Command struct {
@@ -22,6 +23,7 @@ func Constructor(debug bool) *ArgumentParser {
 	ap := &ArgumentParser{
 		flagSet:  flag.NewFlagSet("argumentparser", flag.ExitOnError),
 		commands: make(map[string]*Command),
+		results:  make(map[string]string),
 	}
 	return ap
 }
@@ -41,17 +43,24 @@ func (ap *ArgumentParser) AddFunctionOptions(name, shorthand string, required, h
 	ap.commands[shorthand].Options = options
 }
 
-func (ap *ArgumentParser) Parse() {
+func (ap *ArgumentParser) Add(name, shorthand string, required, hasArg bool, description string) {
+	ap.AddFunction(name, shorthand, required, hasArg, description, func(string) {})
+}
+
+func (ap *ArgumentParser) Parse() map[string]string {
 	ap.flagSet.Parse(os.Args[1:])
 	ap.flagSet.Visit(func(f *flag.Flag) {
 		if cmd, found := ap.commands[f.Name]; found {
 			if cmd.HasArg {
+				ap.results[f.Name] = f.Value.String()
 				cmd.Action(f.Value.String())
 			} else {
+				ap.results[f.Name] = "true"
 				cmd.Action("")
 			}
 		}
 	})
+	return ap.results
 }
 
 func wrapAction(action interface{}) func(string) {
