@@ -1,7 +1,5 @@
 package argumentparser
 
-package argumentparser
-
 import (
 	"flag"
 	"fmt"
